@@ -16,7 +16,19 @@ Episode.set_protocol('minimize', EpisodeMinimizeProtocol)
 
 
 class MinimalFormat(Format):
-    def from_dict(self, collection, model, encoded, **kwargs):
+    def encode(self, model, data, **kwargs):
+        # Retrieve item minimize protocol
+        protocol = model.__protocols__.get('minimize') if model.__protocols__ else None
+
+        if protocol is None:
+            raise ValueError('Model %r has no "minimize" protocol defined' % model)
+
+        if inspect.isfunction(protocol):
+            protocol = protocol()
+
+        return Minimize.encode(data, protocol)
+
+    def decode(self, model, encoded, children=True, **kwargs):
         if model.__wrapper__:
             media = kwargs.get('media')
 
@@ -34,8 +46,11 @@ class MinimalFormat(Format):
         if inspect.isfunction(protocol):
             protocol = protocol()
 
+        return Minimize.decode(encoded, protocol, children=children)
+
+    def from_dict(self, collection, model, encoded, children=True, **kwargs):
         # Decode dictionary with minimized data protocol
-        data = Minimize.decode(encoded, protocol)
+        data = self.decode(model, encoded, children=children)
 
         # Parse `model` from `data`
         return Format.from_dict(self, collection, model, data, **kwargs)
@@ -44,14 +59,5 @@ class MinimalFormat(Format):
         # Convert `item` to `data` dictionary
         data = Format.to_dict(self, item, **kwargs)
 
-        # Retrieve item minimize protocol
-        protocol = item.__protocols__.get('minimize') if item.__protocols__ else None
-
-        if protocol is None:
-            raise ValueError('Item %r has no "minimize" protocol defined' % item)
-
-        if inspect.isfunction(protocol):
-            protocol = protocol()
-
         # Encode dictionary with minimized data protocol
-        return Minimize.encode(data, protocol)
+        return self.encode(item.__class__, data)

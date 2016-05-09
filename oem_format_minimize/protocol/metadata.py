@@ -4,10 +4,11 @@ from oem_format_minimize.core.minimize import MinimizeProtocol
 class MetadataMinimizeProtocol(MinimizeProtocol):
     __root__ = True
 
-    revision    = 0x01
-    hashes      = 0x02
+    hashes      = 0x01
+    media       = 0x02
 
-    media       = 0x03
+    created_at  = 0x11
+    updated_at  = 0x12
 
     class HashesProtocol(MinimizeProtocol):
         __key__ = 'hashes'

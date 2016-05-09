@@ -1,3 +1,5 @@
+from oem_framework.core.elapsed import Elapsed
+
 from copy import deepcopy
 import inspect
 
@@ -49,15 +51,11 @@ class MinimizeProtocol(object):
 
     @classmethod
     def decode_key(cls, key):
-        # Ensure `key` is an integer
-        if type(key) is not int:
-            key = int(key)
-
         # Try retrieve decode mapping for `key`
-        if key not in cls.__decode_map:
-            raise ValueError('Missing definition in %r for key %r' % (cls, key))
-
-        return cls.__decode_map[key]
+        try:
+            return cls.__decode_map[int(key)]
+        except KeyError:
+            raise ValueError('Missing definition in %r for key %r' % (cls, int(key)))
 
     @classmethod
     def encode_key(cls, key):
@@ -102,7 +100,8 @@ class MinimizeProtocol(object):
 
 class Minimize(object):
     @classmethod
-    def decode(cls, data, protocol, process=None):
+    @Elapsed.track
+    def decode(cls, data, protocol, process=None, children=True):
         if protocol.__ignore__:
             return data
 
@@ -120,36 +119,46 @@ class Minimize(object):
         protocol.build()
 
         # Process each item in `data`
-        result = {}
-
-        for key, value in data.items():
+        for key in list(data.keys()):
             # Ignore "minimized" item identifier
             if key == '~':
+                data.pop(key)
                 continue
+
+            value = data.pop(key)
 
             # Decode `key` with `protocol`
             key = protocol.decode_key(key)
 
-            # Process child protocols
-            if type(value) is dict:
-                # Decode `value` with `protocol`
-                value = cls.decode(value, protocol.get_protocol(key))
-            elif type(value) is list:
-                # Decode items in `value` with `protocol`
-                value = [
-                    (
-                        cls.decode(value, protocol.get_protocol(key))
-                        if type(value) is dict else value
-                    )
-                    for value in value
-                ]
+            if children:
+                # Process child protocols
+                value = cls._decode_children(key, value, protocol)
 
             # Store item
-            result[key] = value
+            data[key] = value
 
-        return result
+        return data
 
     @classmethod
+    def _decode_children(cls, key, value, protocol):
+        if type(value) is dict:
+            # Decode `value` with `protocol`
+            return cls.decode(value, protocol.get_protocol(key))
+
+        if type(value) is list:
+            # Decode items in `value` with `protocol`
+            return [
+                (
+                    cls.decode(value, protocol.get_protocol(key))
+                    if type(value) is dict else value
+                )
+                for value in value
+            ]
+
+        return value
+
+    @classmethod
+    @Elapsed.track
     def encode(cls, data, protocol, process=None):
         if protocol.__ignore__:
             return data
@@ -201,6 +210,7 @@ class Minimize(object):
         return result
 
     @classmethod
+    @Elapsed.track
     def _process(cls, data, protocol, func, process=None):
         # Retrieve parameters
         mode, optional, supported = cls._process_parameters(protocol, process)
@@ -209,10 +219,8 @@ class Minimize(object):
         if mode == 'children':
             # Process dictionary of children
             if type(data) is dict and (supported is None or type(data) in supported):
-                return True, dict([
-                    (key, func(value, protocol, process='item'))
-                    for key, value in data.items()
-                ])
+                cls._transform_dictionary(data, lambda v: func(v, protocol, process='item'))
+                return True, data
 
             # Process list of children
             if type(data) is list and (supported is None or type(data) in supported):
@@ -226,10 +234,8 @@ class Minimize(object):
         elif mode == 'item':
             # Process dictionary of item children
             if type(data) is dict and supported and type(data) in supported:
-                return True, dict([
-                    (key, func(value, protocol, process='item'))
-                    for key, value in data.items()
-                ])
+                cls._transform_dictionary(data, lambda v: func(v, protocol, process='item'))
+                return True, data
 
             # Process list of item children
             if type(data) is list and supported and type(data) in supported:
@@ -242,6 +248,7 @@ class Minimize(object):
         return False, None
 
     @classmethod
+    @Elapsed.track
     def _process_parameters(cls, protocol, process):
         mode = None
 
@@ -278,3 +285,9 @@ class Minimize(object):
             False,
             None
         )
+
+    @classmethod
+    @Elapsed.track
+    def _transform_dictionary(cls, data, func):
+        for key in data.iterkeys():
+            data[key] = func(data[key])
