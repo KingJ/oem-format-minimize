@@ -28,7 +28,7 @@ class MinimalFormat(Format):
 
         return Minimize.encode(data, protocol)
 
-    def decode(self, model, encoded, children=True, **kwargs):
+    def decode(self, model, encoded, children=True, ignore_keys=None, **kwargs):
         if model.__wrapper__:
             media = kwargs.get('media')
 
@@ -46,7 +46,11 @@ class MinimalFormat(Format):
         if inspect.isfunction(protocol):
             protocol = protocol()
 
-        return Minimize.decode(encoded, protocol, children=children)
+        return Minimize.decode(
+            encoded, protocol,
+            children=children,
+            ignore_keys=ignore_keys
+        )
 
     def from_dict(self, collection, model, encoded, children=True, **kwargs):
         # Decode dictionary with minimized data protocol

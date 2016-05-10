@@ -101,7 +101,7 @@ class MinimizeProtocol(object):
 class Minimize(object):
     @classmethod
     @Elapsed.track
-    def decode(cls, data, protocol, process=None, children=True):
+    def decode(cls, data, protocol, process=None, children=True, ignore_keys=None):
         if protocol.__ignore__:
             return data
 
@@ -115,6 +115,9 @@ class Minimize(object):
         if processed:
             return result
 
+        if ignore_keys is None:
+            ignore_keys = []
+
         # Ensure protocol is built
         protocol.build()
 
@@ -125,9 +128,12 @@ class Minimize(object):
                 data.pop(key)
                 continue
 
-            value = data.pop(key)
+            # Ignore keys defined in `ignore_keys`
+            if type(key) is str and key in ignore_keys:
+                continue
 
             # Decode `key` with `protocol`
+            value = data.pop(key)
             key = protocol.decode_key(key)
 
             if children:
