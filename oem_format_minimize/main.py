@@ -54,7 +54,7 @@ class MinimalFormat(Format):
 
     def from_dict(self, collection, model, encoded, children=True, **kwargs):
         # Decode dictionary with minimized data protocol
-        data = self.decode(model, encoded, children=children)
+        data = self.decode(model, encoded, children=children, **kwargs)
 
         # Parse `model` from `data`
         return Format.from_dict(self, collection, model, data, **kwargs)
