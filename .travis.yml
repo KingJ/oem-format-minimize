@@ -1,0 +1,19 @@
+language: python
+python:
+- '2.7'
+install:
+- pip install -U setuptools
+script: true
+after_success: python setup.py sdist bdist_wheel
+deploy:
+  provider: releases
+  api_key:
+    secure: NwdusbYkJBaUGcDRRj/mM9cplHn6szc/KRQG2cqyPO0hm2x8BQ5CLXzKFGaserfax9eXmslKl0QaKwMLlG18wS9AgNt4nOYIEEZKTYjvj6KKWRO1/VXTY+b+CBt97Fm805BYQTqG1WdSGa4DYMzSUfa3HHTJI7qZz62UUOu1uuO1uWqKzxr2f6aiwmt0trII5woIgS0LTxqRX4GaInrd79idz+7QvhJTz5Y89N4jTmjzmtb8hEGJ9KKJC+ZsBb2QruCRnNl6LE7D27PLUPwhB13hviQ3Up8sDeGgyuL3JOkt7TCwY0rdCljg7uvDXPS9A/A6M5Zw73E1qTO7knnrVuumTOZUdq5/dLKU+dv2PchM/NSgVvJprx51z7ujp7axlG9mi8txrEcLbgkVGUCWfucmYYKhSuLUpwOgXQZx88Iq+SDBauwpIfXlp8LrjFpbfLqdTD8h6ePGT4+2Yw/Y/i53BUiyc/X12Vn/GvC7NUiG0FrULcaf8m2wOg9cpqBbESLJsm6//fHRNzRuct67k92SaryXlDpNKM+LteUOcIBPj5wChazrXTnB88ArM6LcBxRDuca17mFWyMGydAfGEvLqn8HmSzbmKQVQdb2c+INfQWK0yVLMB6OyXC1fT1G0k1n9aVpfZwFKeAVstEHDV0NUrTB4WiR/tM1uKZYkYD0=
+  skip_cleanup: true
+  file_glob: true
+  file:
+  - "dist/oem-format-minimize-*"
+  - "dist/oem_format_minimize-*"
+  on:
+    repo: OpenEntityMap/oem-format-minimize
+    tags: true
