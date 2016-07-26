@@ -1,5 +1,6 @@
 from oem_format_minimize.core.minimize import MinimizeProtocol, MinimizeProperty
 from oem_format_minimize.protocol.name import NameMinimizeProtocol
+from oem_format_minimize.protocol.part import PartMinimizeProtocol
 
 
 class MovieMinimizeProtocol(MinimizeProtocol):
@@ -12,8 +13,17 @@ class MovieMinimizeProtocol(MinimizeProtocol):
     supplemental    = 0x11
     parameters      = 0x12
 
+    parts           = 0x21
+
     NameMinimizeProtocol = NameMinimizeProtocol.to_child(
         key='names',
+        process={
+            'children': True
+        }
+    )
+
+    PartMinimizeProtocol = PartMinimizeProtocol.to_child(
+        key='parts',
         process={
             'children': True
         }
